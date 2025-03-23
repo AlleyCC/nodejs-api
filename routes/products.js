@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authMiddleware = require("..//middlewares/authMiddleware.js");
 const getFormattedTime = require("../utils/timeHelpers");
+const { v4: uuidv4 } = require('uuid');
 let products = require("../data/productData"); 
 
 // name 不能重複，price 必須為數字，stock 不能為負數。
@@ -23,14 +24,14 @@ router.post('/', authMiddleware,(req, res) => {
   if (!name || name.trim() == "") {
     return res.status(400).json({ error: "Name is required." });
   };
-  if (!price || (typeof price === "number" && !isNaN(price))) {
+  if (!price || (typeof price !== "number" && isNaN(price))) {
     return res.status(400).json({ error: "Price must be integer." })
   };
   if (!stock || stock < 0) {
     return res.status(400).json({ error: "Name is required." });
   };
   const createTime = getFormattedTime();
-  const id = Date.now();
+  const id = uuidv4();
   const newproduct = {
     id,
     name,
@@ -52,7 +53,7 @@ router.patch('/:id', authMiddleware,(req, res) => {
    if (!name || name.trim() == "") {
     return res.status(400).json({ error: "Name is required." });
   };
-  if (!price || (typeof price === "number" && !isNaN(price))) {
+  if (!price || (typeof price !== "number" && isNaN(price))) {
     return res.status(400).json({ error: "Price must be integer." })
   };
   if (!stock || stock < 0) {

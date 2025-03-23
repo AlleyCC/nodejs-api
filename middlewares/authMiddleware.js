@@ -7,7 +7,7 @@ const authMiddleware = (req, res, next) => {
     }
 
     if (apiKey !== validApiKey) {
-        return res.status(403).json({ error: "錯誤訊息" });
+        return res.status(403).json({ error: "No access" });
     }
     next(); 
 };

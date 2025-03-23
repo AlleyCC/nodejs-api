@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 const isAdminMiddleware = require("../middlewares/adminMiddleware");
 const isLoginUserMiddleware = require("../middlewares/loginUserMiddleware");
 const loggerMiddleware = require("../middlewares/loggerMiddleware.js");
@@ -16,8 +17,10 @@ router.get('/', isAdminMiddleware,(req, res) => {
 
 // 2. `GET /orders/:id` - 取得特定訂單的詳細內容。
 router.get('/:id', isLoginUserMiddleware,(req, res) => {
-  const order = orders.find(order => order.id === parseInt(req.params.id));
+  const order = orders.find(order => order.orderId === parseInt(req.params.id));
   if (!order) return res.status(404).json({ error: "Order not found."});
+  const username = req.header("name");
+  if (order.createUser !== username && username !== 'admin') return res.status(404).json({ error: "No access"});
   res.json(order);
 })
 
@@ -25,6 +28,7 @@ router.get('/:id', isLoginUserMiddleware,(req, res) => {
 //  quantity 必須大於 0，且該商品的 stock 必須足夠才能下單。
 router.post('/', isLoginUserMiddleware, loggerMiddleware,(req, res) => {
   const { productId, quantity } = req.body;
+  const username = req.header("name");
   const product = products.find(product => product.productId === productId);
   if (!productId) { 
     return res.status(400).json({ error: "productId is required." });
@@ -37,14 +41,16 @@ router.post('/', isLoginUserMiddleware, loggerMiddleware,(req, res) => {
   }
   
   const createTime = getFormattedTime();
-  const id = Date.now();
+  const id = uuidv4();
   const newOrder = {
     "orderId": id,
     "productId": productId,
     "status": "pending",
     "quantity": quantity,
     "createTime": createTime,
-    "updateTime": createTime
+    "createUser": username,
+    "updateTime": createTime,
+    "updateUser": username,
   };
   orders.push(newOrder);
   res.status(201).json(newOrder);
@@ -52,7 +58,7 @@ router.post('/', isLoginUserMiddleware, loggerMiddleware,(req, res) => {
 
 // 4. `PATCH /orders/:id` - **（限用戶）** 取消訂單。
 router.patch('/:id', isLoginUserMiddleware, loggerMiddleware,(req, res) => { 
-  const order = orders.find(order => order.id === parseInt(req.params.id));
+  const order = orders.find(order => order.orderId === parseInt(req.params.id));
   if (!order) return res.status(400).json({ error: "Order not found." });
   order.status = "canceled";
   order.updateTime = getFormattedTime();
@@ -61,7 +67,7 @@ router.patch('/:id', isLoginUserMiddleware, loggerMiddleware,(req, res) => {
 
 // 5. `DELETE /orders/:id` - **（限管理員）** 刪除訂單。
 router.delete('/:id', isAdminMiddleware, loggerMiddleware,(req, res) => {
-  const orderIndex = orders.findIndex(order => order.id === parseInt(req.params.id));
+  const orderIndex = orders.findIndex(order => order.orderId === parseInt(req.params.id));
   if (orderIndex === -1) return res.status(404).json({ error: "Order not found." });
   orders.splice(orderIndex, 1);
   res.status(201).json({ message: "Order deleted succesfully." });

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 let users = require("../data/userData"); 
 
 
@@ -27,7 +28,7 @@ router.post('/', (req, res) => {
   if (!email || email.trim() == "") return res.status(400).json({ error: "Email is required." });
   const emailRepeated = users.find(user => user.email === email);
   if (emailRepeated) return res.status(400).json({ error: "Email already registered." });
-  const id = Date.now();
+  const id = uuidv4();
   const newUser = {
     id,
     name,

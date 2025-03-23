@@ -1,7 +1,6 @@
-
-
 const express = require("express");
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 const getFormattedTime = require("../utils/timeHelpers");
 let todos = require("../data/todoData"); 
 
@@ -19,7 +18,7 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   const { title } = req.body;
   if (!title || title.trim() == "") return res.status(400).json({ error: "Todo list content is required." });
-  const id = Date.now();
+  const id = uuidv4();
   const createTime = getFormattedTime();
   const newTodo = {
     id,
